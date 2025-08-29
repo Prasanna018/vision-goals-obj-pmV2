@@ -3,7 +3,11 @@
 import React, { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 
+
+
 const HierarchicalTree = () => {
+  // create svg ref here //
+
   const svgRef = useRef();
 
   // The JSON data from your uploaded file
@@ -294,6 +298,7 @@ const HierarchicalTree = () => {
         return (a.parent === b.parent ? 1 : 2) * verticalSpacing;
       });
 
+    //  diagonal here
     // Create diagonal path generator
     const diagonal = d3.linkHorizontal()
       .x(d => d ? d.y : 0)
@@ -394,7 +399,7 @@ const HierarchicalTree = () => {
 
       // Set consistent box dimensions
       const boxWidth = 500;
-      const boxHeight = 100;
+      const boxHeight = 120;
 
       // Adjust vertical positions to prevent overlapping
       const nodesByDepth = {};
