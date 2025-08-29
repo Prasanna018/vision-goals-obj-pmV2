@@ -1,3 +1,4 @@
+/* eslint-disable no-cond-assign */
 /* eslint-disable no-unused-vars */
 import React, { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
@@ -33,9 +34,9 @@ const HierarchicalTree = () => {
             "objective": "Increase transportation investment which focuses on economic vitality",
             "children": [
               {
-                "name": "Change in employment/economic output in areas with new/improved transportation facilities",
+                "name": "Change in employment/economic output in areas with  transportation facilities",
                 "type": "leaf",
-                "pm": "Change in employment or economic output in areas with new or improved transportation facilities"
+                "pm": "Change in employment or economic output in areas with  transportation facilities"
               }
             ]
           },
@@ -277,16 +278,16 @@ const HierarchicalTree = () => {
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove(); // Clear previous render
 
-    // Increased dimensions to accommodate full text without wrapping
-    const margin = { top: 100, right: 50, bottom: 50, left: 50 };
+    // Set dimensions and margins
+    const margin = { top: 120, right: 50, bottom: 50, left: 50 };
     const width = 2400 - margin.left - margin.right;
-    const height = 3000 - margin.top - margin.bottom;
-    const horizontalSpacing = 600; // Increased horizontal spacing
-    const verticalSpacing = 80; // Minimum vertical spacing between nodes
+    const height = 3900 - margin.top - margin.bottom;
+    const horizontalSpacing = 600; // Horizontal spacing between columns
+    const verticalSpacing = 100; // Minimum vertical spacing between nodes
     let i = 0;
     const duration = 750;
 
-    // Create the tree layout with larger size
+    // Create the tree layout
     const tree = d3.tree().size([height, width])
       .separation((a, b) => {
         // Custom separation function to prevent overlapping
@@ -340,12 +341,45 @@ const HierarchicalTree = () => {
       .append("text")
       .attr("class", "header")
       .attr("x", d => d.col * horizontalSpacing)
-      .attr("y", -60)
+      .attr("y", -80)
       .attr("text-anchor", "middle")
-      .style("font-size", "24px")
+      .style("font-size", "36px")
       .style("font-weight", "bold")
       .style("fill", "#1e40af")
       .text(d => d.text);
+
+    // Function to wrap text
+    function wrapText(text, width) {
+      text.each(function () {
+        const text = d3.select(this);
+        const words = text.text().split(/\s+/).reverse();
+        let word;
+        let line = [];
+        let lineNumber = 0;
+        const lineHeight = 1.1; // ems
+        const y = text.attr("y");
+        const dy = parseFloat(text.attr("dy"));
+        let tspan = text.text(null).append("tspan")
+          .attr("x", 0)
+          .attr("y", y)
+          .attr("dy", dy + "em");
+
+        while (word = words.pop()) {
+          line.push(word);
+          tspan.text(line.join(" "));
+          if (tspan.node().getComputedTextLength() > width) {
+            line.pop();
+            tspan.text(line.join(" "));
+            line = [word];
+            tspan = text.append("tspan")
+              .attr("x", 0)
+              .attr("y", y)
+              .attr("dy", ++lineNumber * lineHeight + dy + "em")
+              .text(word);
+          }
+        }
+      });
+    }
 
     function update(source) {
       // Compute the new tree layout
@@ -358,20 +392,9 @@ const HierarchicalTree = () => {
         d.y = d.depth * horizontalSpacing;
       });
 
-      // Calculate text dimensions for all nodes first
-      const tempText = g.append("text")
-        .style("font-size", "16px")
-        .style("font-weight", "500")
-        .style("visibility", "hidden");
-
-      nodes.forEach(d => {
-        tempText.text(d.data.name);
-        const bbox = tempText.node().getBBox();
-        d.textWidth = Math.max(bbox.width + 40, 200); // Minimum width of 200px
-        d.textHeight = bbox.height + 24;
-      });
-
-      tempText.remove();
+      // Set consistent box dimensions
+      const boxWidth = 500;
+      const boxHeight = 100;
 
       // Adjust vertical positions to prevent overlapping
       const nodesByDepth = {};
@@ -388,7 +411,7 @@ const HierarchicalTree = () => {
         for (let i = 1; i < nodesByDepth[depth].length; i++) {
           const current = nodesByDepth[depth][i];
           const previous = nodesByDepth[depth][i - 1];
-          const minDistance = Math.max(previous.textHeight, current.textHeight) + 20;
+          const minDistance = boxHeight + 40;
 
           if (current.x - previous.x < minDistance) {
             current.x = previous.x + minDistance;
@@ -412,12 +435,12 @@ const HierarchicalTree = () => {
         })
         .style("cursor", d => (d.children || d._children) ? "pointer" : "default");
 
-      // Add rectangles first
+      // Add rectangles with consistent size
       nodeEnter.append("rect")
-        .attr("x", d => -d.textWidth / 2)
-        .attr("y", d => -d.textHeight / 2)
-        .attr("width", d => d.textWidth)
-        .attr("height", d => d.textHeight)
+        .attr("x", -boxWidth / 2)
+        .attr("y", -boxHeight / 2)
+        .attr("width", boxWidth)
+        .attr("height", boxHeight)
         .attr("rx", 8)
         .style("fill", d => {
           if (d.depth === 0) return "#e0f2fe"; // Vision - light blue
@@ -433,32 +456,33 @@ const HierarchicalTree = () => {
         })
         .style("stroke-width", "2px");
 
-      // Add text with full content, no wrapping
+      // Add text with wrapping
       nodeEnter.append("text")
         .attr("dy", "0.35em")
         .attr("text-anchor", "middle")
-        .style("font-size", "16px")
-        .style("font-weight", "500")
+        .style("font-size", "24px")
+        .style("font-weight", "bold")
         .style("fill", "#1f2937")
         .style("pointer-events", "none")
-        .text(d => d.data.name); // Full text, no truncation
+        .text(d => d.data.name)
+        .call(wrapText, boxWidth - 20); // Wrap text within box width
 
       // Add expand/collapse indicator for nodes with children
       nodeEnter.append("circle")
-        .attr("cx", d => d.textWidth / 2 - 15)
-        .attr("cy", -10)
-        .attr("r", 8)
+        .attr("cx", boxWidth / 2 - 20)
+        .attr("cy", -boxHeight / 2 + 20)
+        .attr("r", 10)
         .style("fill", "#3b82f6")
         .style("stroke", "#1e40af")
         .style("stroke-width", "2px")
         .style("display", d => (d.children || d._children) ? "block" : "none");
 
       nodeEnter.append("text")
-        .attr("x", d => d.textWidth / 2 - 15)
-        .attr("y", -10)
-        .attr("dy", "0.35em")
+        .attr("x", boxWidth / 2 - 20)
+        .attr("y", -boxHeight / 2 + 20)
+        .attr("dy", "0.50em")
         .attr("text-anchor", "middle")
-        .style("font-size", "12px")
+        .style("font-size", "20px")
         .style("font-weight", "bold")
         .style("fill", "white")
         .style("pointer-events", "none")
@@ -542,19 +566,8 @@ const HierarchicalTree = () => {
       <div className="p-6">
         <div className="mb-6">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Transportation Vision Hierarchy
+            Transportation Performance Measures
           </h1>
-          <div className="p-6 rounded-lg bg-blue-50 text-gray-700">
-            <p className="text-base mb-2">
-              <strong>Instructions:</strong> Click on any node with a (+) or (−) indicator to expand or collapse its children.
-            </p>
-            <p className="text-sm text-gray-600">
-              The hierarchy shows: <span className="font-semibold text-blue-600">Vision</span> →
-              <span className="font-semibold text-green-600"> Goals</span> →
-              <span className="font-semibold text-orange-600"> Objectives</span> →
-              <span className="font-semibold text-purple-600"> Performance Measures</span>
-            </p>
-          </div>
         </div>
 
         <div className="overflow-auto border-2 border-gray-200 rounded-lg bg-white shadow-lg">
