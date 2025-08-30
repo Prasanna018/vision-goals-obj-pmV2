@@ -1,13 +1,14 @@
 /* eslint-disable no-cond-assign */
 /* eslint-disable no-unused-vars */
 import React, { useEffect, useRef } from 'react';
+
+// imported d3 from d3 (library)
 import * as d3 from 'd3';
 
 
 
 const HierarchicalTree = () => {
   // create svg ref here //
-
   const svgRef = useRef();
 
   // The JSON data from your uploaded file
@@ -333,11 +334,11 @@ const HierarchicalTree = () => {
       });
     }
 
-    // Add column headers with proper spacing
+    // Add column headers with proper spacing //
     const headers = [
-      { text: "Goals", col: 1 },
-      { text: "Objectives", col: 2 },
-      { text: "Performance Measures (PMs)", col: 3 }
+      { text: "Goals (5)", col: 1 },
+      { text: "Objectives (14)", col: 2 },
+      { text: "Performance Measures (24)", col: 3 }
     ];
 
     g.selectAll("text.header")
@@ -353,7 +354,7 @@ const HierarchicalTree = () => {
       .style("fill", "#1e40af")
       .text(d => d.text);
 
-    // Function to wrap text
+    // Function to wrap text //
     function wrapText(text, width) {
       text.each(function () {
         const text = d3.select(this);
@@ -400,7 +401,7 @@ const HierarchicalTree = () => {
       // Set consistent box dimensions
       const boxWidth = 500;
       const boxHeight = 120;
-
+      // 
       // Adjust vertical positions to prevent overlapping
       const nodesByDepth = {};
       nodes.forEach(d => {
@@ -417,7 +418,7 @@ const HierarchicalTree = () => {
           const current = nodesByDepth[depth][i];
           const previous = nodesByDepth[depth][i - 1];
           const minDistance = boxHeight + 40;
-
+          // 
           if (current.x - previous.x < minDistance) {
             current.x = previous.x + minDistance;
           }
